@@ -1,6 +1,7 @@
 <?php
 session_start();
-require '../db-connect.php';
+require_once __DIR__ . '/../config.php'; // ★ 修正点: config.phpを読み込む
+require_once __DIR__ . '/../db-connect.php';
 
 // ログインチェック
 if (!isset($_SESSION['customer'])) {
@@ -35,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // すべて成功したらコミット
         $pdo->commit();
 
-        // 購入完了ページへリダイレクト
-        header('Location: /public/purchase-complete.php');
+        // ★ 修正点: リダイレクトパスを定数に置き換え
+        header('Location: ' . PUBLIC_ROOT_PATH . 'purchase-complete.php');
         exit();
 
     } catch (Exception $e) {

@@ -1,8 +1,8 @@
 <?php
 // rakuten-search.php
 
-// 楽天APIの基本情報
-define('RAKUTEN_APP_ID', '1010388565407325408'); // ★ステップ1で取得したID
+// 設定ファイルを読み込む
+require_once __DIR__ . '/../includes/config.php';
 
 // フロントエンドからのキーワードを受け取る
 $keyword = $_GET['keyword'] ?? '';

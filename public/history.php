@@ -1,16 +1,14 @@
 <?php
-require '../includes/templates/header.php';
-require '../includes/db-connect.php';
+require_once __DIR__ . '/../includes/templates/header.php';
+require_once __DIR__ . '/../includes/db-connect.php';
 
-// ログインチェック
 if (!isset($_SESSION['customer'])) {
-    header('Location: /public/login-input.php');
+    header('Location: ' . PUBLIC_ROOT_PATH . 'login-input.php');
     exit;
 }
 
 $customer_id = $_SESSION['customer']['id'];
 
-// 購入履歴を取得
 $stmt = $pdo->prepare(
     "SELECT p.name, p.price, p.image_path, pu.purchase_date 
      FROM purchases pu 
@@ -36,7 +34,7 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php foreach ($history as $item): ?>
             <tr>
                 <td style="display:flex; align-items:center; gap:15px;">
-                    <img src="/public/uploads/<?= htmlspecialchars($item['image_path']) ?>" width="60">
+                    <img src="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>uploads/<?= htmlspecialchars($item['image_path']) ?>" width="60">
                     <?= htmlspecialchars($item['name']) ?>
                 </td>
                 <td>¥ <?= number_format($item['price']) ?></td>
@@ -46,4 +44,4 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </table>
 <?php endif; ?>
 
-<?php require '../includes/templates/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/templates/footer.php'; ?>

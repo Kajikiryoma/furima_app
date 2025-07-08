@@ -1,6 +1,7 @@
 <?php
 session_start();
-require '../db-connect.php';
+require_once __DIR__ . '/../config.php'; // ★ 修正点: config.phpを読み込む
+require_once __DIR__ . '/../db-connect.php';
 
 // ログインチェック
 if (!isset($_SESSION['customer'])) {
@@ -24,7 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<h1>エラー</h1>";
         echo "<p>販売価格（" . number_format($price) . "円）が参考価格（" . number_format($regular_price) . "円）を上回っています。</p>";
         echo "<p>価格を修正してください。</p>";
-        echo "<a href='../../public/listing-input.php'>出品ページに戻る</a>";
+        // ★ 修正点: パスを定数に置き換え
+        echo '<a href="' . htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) . 'listing-input.php">出品ページに戻る</a>';
         exit;
     }
     
@@ -36,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($same_item_count >= 3) {
         echo "<h1>エラー</h1>";
         echo "<p>類似商品の多重出品は制限されています。出品を中止しました。</p>";
-        echo "<a href='../../public/listing-input.php'>出品ページに戻る</a>";
+        // ★ 修正点: パスを定数に置き換え
+        echo '<a href="' . htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) . 'listing-input.php">出品ページに戻る</a>';
         exit;
     }
 
@@ -47,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // --- 画像アップロード処理 ---
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = '../../public/uploads/';
+        // ★ 修正点: パスの指定方法をより確実に
+        $upload_dir = dirname(__FILE__) . '/../../public/uploads/';
         $filename = time() . '_' . basename($_FILES['image']['name']);
         $target_file = $upload_dir . $filename;
 
@@ -62,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  VALUES (?, ?, ?, ?, ?, ?)"
             );
             if ($stmt->execute([$seller_id, $name, $description, $price, $regular_price, $filename])) {
-                // 出品成功時はトップページへリダイレクト
-                header('Location: /public/index.php');
+                // ★ 修正点: リダイレクトパスを定数に置き換え
+                header('Location: ' . PUBLIC_ROOT_PATH . 'index.php');
                 exit();
             } else {
                 echo 'データベースへの登録に失敗しました。';

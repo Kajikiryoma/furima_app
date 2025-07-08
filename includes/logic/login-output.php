@@ -1,6 +1,7 @@
 <?php
 session_start();
-require '../db-connect.php';
+require_once __DIR__ . '/../config.php'; // ★ 修正点: config.phpを読み込む
+require_once __DIR__ . '/../db-connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
@@ -16,12 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'name' => $customer['name'],
             'email' => $customer['email']
         ];
-        // トップページへリダイレクト（ここを修正！）
-        header('Location: /public/index.php');
+        // ★ 修正点: リダイレクトパスを定数に置き換え
+        header('Location: ' . PUBLIC_ROOT_PATH . 'index.php');
         exit();
     } else {
         echo 'メールアドレスまたはパスワードが違います。';
-        echo '<br><a href="/public/login-input.php">ログインページに戻る</a>'; // こちらも念のため修正
+        // ★ 修正点: パスを定数に置き換え
+        echo '<br><a href="' . htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) . 'login-input.php">ログインページに戻る</a>';
     }
 }
 ?>

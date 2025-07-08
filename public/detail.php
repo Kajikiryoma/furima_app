@@ -1,15 +1,13 @@
 <?php
-require '../includes/templates/header.php';
-require '../includes/db-connect.php';
+require_once __DIR__ . '/../includes/templates/header.php';
+require_once __DIR__ . '/../includes/db-connect.php';
 
-// URLから商品IDを取得
 if (!isset($_GET['id'])) {
     echo '商品が指定されていません。';
     exit;
 }
 $product_id = $_GET['id'];
 
-// 商品情報を取得
 $stmt = $pdo->prepare("SELECT p.*, c.name as seller_name FROM products p JOIN customers c ON p.seller_id = c.id WHERE p.id = ?");
 $stmt->execute([$product_id]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -22,7 +20,7 @@ if (!$product) {
 
 <div class="product-detail-container">
     <div class="product-detail-image">
-        <img src="/public/uploads/<?= htmlspecialchars($product['image_path']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+        <img src="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>uploads/<?= htmlspecialchars($product['image_path']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
     </div>
     <div class="product-detail-info">
         <h1><?= htmlspecialchars($product['name']) ?></h1>
@@ -35,7 +33,7 @@ if (!$product) {
         </div>
         
         <?php if ($product['status'] === 'on_sale'): ?>
-            <form action="purchase-input.php" method="post">
+            <form action="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>purchase-input.php" method="post">
                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
                 <button type="submit" class="purchase-button">購入手続きへ</button>
             </form>
@@ -46,7 +44,6 @@ if (!$product) {
 </div>
 
 <style>
-/* このページ専用の簡易的なスタイル */
 .product-detail-container { display: flex; gap: 40px; background: #fff; padding: 30px; border-radius: 8px; }
 .product-detail-image { flex: 1; }
 .product-detail-image img { width: 100%; border-radius: 8px; }
@@ -57,4 +54,4 @@ if (!$product) {
 .sold-out { text-align: center; padding: 15px; background: #ccc; color: #fff; font-weight: bold; border-radius: 8px;}
 </style>
 
-<?php require '../includes/templates/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/templates/footer.php'; ?>
