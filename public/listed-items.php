@@ -2,32 +2,30 @@
 require_once __DIR__ . '/../includes/templates/header.php';
 require_once __DIR__ . '/../includes/db-connect.php';
 
+// ログインしていなければ、ログインページへリダイレクト
 if (!isset($_SESSION['customer'])) {
     header('Location: ' . PUBLIC_ROOT_PATH . 'login-input.php');
     exit;
 }
 
+// セッションからユーザーIDを取得
 $customer_id = $_SESSION['customer']['id'];
 
-// データベースから購入履歴を取得するPHPの部分は変更ありません
+// データベースから、このユーザーが出品した全商品を取得する
 $stmt = $pdo->prepare(
-    "SELECT p.name, p.price, p.image_path, pu.purchase_date 
-     FROM purchases pu 
-     JOIN products p ON pu.product_id = p.id 
-     WHERE pu.buyer_id = ? 
-     ORDER BY pu.purchase_date DESC"
+    "SELECT * FROM products WHERE seller_id = ? ORDER BY created_at DESC"
 );
 $stmt->execute([$customer_id]);
-$history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$listed_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<h1>購入履歴</h1>
+<h1>出品した商品</h1>
 
-<?php if (empty($history)): ?>
-    <p>購入履歴はありません。</p>
+<?php if (empty($listed_items)): ?>
+    <p>出品した商品はありません。</p>
 <?php else: ?>
     <div class="history-list">
-        <?php foreach ($history as $item): ?>
+        <?php foreach ($listed_items as $item): ?>
             <div class="history-item">
                 <div class="history-item-image">
                     <img src="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>uploads/<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>">
@@ -36,7 +34,13 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="history-item-name"><?= htmlspecialchars($item['name'], ENT_QUOTES) ?></p>
                     <div class="history-item-meta">
                         <span class="history-item-price">¥ <?= number_format($item['price']) ?></span>
-                        <span class="history-item-date">購入日: <?= htmlspecialchars(date('Y/m/d H:i', strtotime($item['purchase_date'])), ENT_QUOTES) ?></span>
+
+                        <?php if ($item['status'] === 'on_sale'): ?>
+                            <span class="item-status-badge status-on_sale">販売中</span>
+                        <?php else: ?>
+                            <span class="item-status-badge status-sold">売り切れ</span>
+                        <?php endif; ?>
+
                     </div>
                 </div>
             </div>

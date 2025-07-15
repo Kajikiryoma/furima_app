@@ -15,9 +15,13 @@ if (!isset($_SESSION['customer'])) {
                 <input type="text" id="rakuten-keyword" class="form-input" placeholder="商品名やJANコードで検索">
                 <button id="rakuten-search-btn">楽天で検索</button>
             </div>
-            <div id="rakuten-results"></div> </div>
+            <div id="rakuten-results"></div>
+        </div>
     </div>
-    <form action="../includes/logic/listing-output.php" method="post" enctype="multipart/form-data">
+
+    <form action="../includes/logic/listing-output.php" method="post" enctype="multipart/form-data" id="listing-form">
+        <div id="form-errors" class="form-errors"></div>
+
         <div class="listing-section">
             <h2 class="section-title">商品の出品</h2>
             <div class="section-content">
@@ -51,11 +55,13 @@ if (!isset($_SESSION['customer'])) {
         <div class="listing-section">
             <h2 class="section-title">販売価格</h2>
             <div class="section-content">
+                <div id="price-errors" class="form-errors"></div>
+                <p class="form-notice">当サービスは転売対策のため、参考価格（定価）以上の値段を設定することはできません。</p>
                 <div class="form-group">
                     <label for="price" class="form-label">あなたの販売価格 <span class="label-required">必須</span></label>
                     <div class="price-input-group">
                         <span class="currency-symbol">¥</span>
-                        <input type="number" id="price" name="price" class="form-input" placeholder="0" required>
+                        <input type="number" id="price" name="price" class="form-input" placeholder="0" required min="0">
                     </div>
                 </div>
                 <div class="form-group">
@@ -68,6 +74,7 @@ if (!isset($_SESSION['customer'])) {
             </div>
         </div>
         
+        <p class="form-notice">公平な取引のため、同一と見なされる商品の出品は3品までに制限されています。</p>
         <button type="submit" class="listing-submit-button">この内容で出品する</button>
     </form>
 </div>
@@ -80,28 +87,30 @@ if (!isset($_SESSION['customer'])) {
     .result-item img { width: 60px; height: 60px; object-fit: cover; }
     .result-item .info { flex-grow: 1; }
     .result-item .select-item-btn { padding: 5px 10px; cursor: pointer; }
-    /* プレビュー画像のスタイル */
     #upload-box-content img { max-width: 100%; max-height: 200px; object-fit: contain; }
+    .form-errors {
+        background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+        padding: 1rem; border-radius: 4px; margin-bottom: 20px; display: none;
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
     // --- 全体の要素を取得 ---
-    // 楽天検索関連
     const searchBtn = document.getElementById('rakuten-search-btn');
     const keywordInput = document.getElementById('rakuten-keyword');
     const resultsContainer = document.getElementById('rakuten-results');
-    // フォーム本体
     const nameInput = document.getElementById('name');
     const regularPriceInput = document.getElementById('regular_price');
     const descriptionInput = document.getElementById('description');
-    // 画像アップロード関連
     const uploadBox = document.querySelector('.image-upload-box');
     const fileInput = document.getElementById('image');
     const uploadBoxContent = document.getElementById('upload-box-content');
-    const originalUploadHTML = uploadBoxContent.innerHTML; // 初期状態を保存
-
+    const listingForm = document.getElementById('listing-form');
+    const generalErrorContainer = document.getElementById('form-errors');
+    const priceErrorContainer = document.getElementById('price-errors');
+    const submitButton = listingForm.querySelector('.listing-submit-button');
 
     // --- 機能1：楽天商品検索 ---
     searchBtn.addEventListener('click', async function() {
@@ -139,39 +148,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-
     // --- 機能2：画像アップロードとプレビュー ---
-    // ファイルが選択された時の処理
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
             const file = this.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 中身をプレビュー画像に差し替え
                 uploadBoxContent.innerHTML = `<img src="${e.target.result}" alt="プレビュー">`;
             }
             reader.readAsDataURL(file);
         }
     });
-
-    // ドラッグ＆ドロップの処理
-    uploadBox.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadBox.classList.add('is-dragover');
-    });
-    uploadBox.addEventListener('dragleave', (e) => {
-        uploadBox.classList.remove('is-dragover');
-    });
+    uploadBox.addEventListener('dragover', (e) => { e.preventDefault(); uploadBox.classList.add('is-dragover'); });
+    uploadBox.addEventListener('dragleave', (e) => { e.preventDefault(); uploadBox.classList.remove('is-dragover'); });
     uploadBox.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadBox.classList.remove('is-dragover');
         if (e.dataTransfer.files.length > 0) {
             fileInput.files = e.dataTransfer.files;
-            // changeイベントを手動で発火させて、プレビュー処理を共通化
             fileInput.dispatchEvent(new Event('change'));
+        }
+    });
+
+    // --- 機能3：フォームの非同期送信とエラー表示 ---
+    listingForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        generalErrorContainer.style.display = 'none';
+        priceErrorContainer.style.display = 'none';
+        submitButton.disabled = true;
+        submitButton.textContent = '処理中...';
+        const formData = new FormData(listingForm);
+        try {
+            const response = await fetch('/includes/logic/listing-output.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                window.location.href = result.redirect_url;
+            } else {
+                if (result.error_type === 'price') {
+                    priceErrorContainer.textContent = result.message;
+                    priceErrorContainer.style.display = 'block';
+                } else {
+                    generalErrorContainer.textContent = result.message;
+                    generalErrorContainer.style.display = 'block';
+                }
+            }
+        } catch (err) {
+            generalErrorContainer.textContent = '通信中にエラーが発生しました。';
+            generalErrorContainer.style.display = 'block';
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'この内容で出品する';
         }
     });
 
 });
 </script>
+
 <?php require '../includes/templates/footer.php'; ?>

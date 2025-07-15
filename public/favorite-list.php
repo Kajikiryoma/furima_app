@@ -2,23 +2,31 @@
 require_once __DIR__ . '/../includes/templates/header.php';
 require_once __DIR__ . '/../includes/db-connect.php';
 
-if (isset($_GET['action']) && $_GET['action'] === 'deleted') {
-    echo '<div class="alert-success">アカウントが正常に削除されました。</div>';
+if (!isset($_SESSION['customer'])) {
+    header('Location: ' . PUBLIC_ROOT_PATH . 'login-input.php');
+    exit;
 }
+$customer_id = $_SESSION['customer']['id'];
 
-// 新着商品を10件取得
-$stmt = $pdo->query("SELECT * FROM products WHERE status = 'on_sale' ORDER BY created_at DESC LIMIT 10");
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// favoritesテーブルとproductsテーブルを結合して、いいねした商品情報を取得
+$stmt = $pdo->prepare(
+    "SELECT p.* FROM products p 
+     JOIN favorites f ON p.id = f.product_id 
+     WHERE f.customer_id = ?"
+);
+$stmt->execute([$customer_id]);
+$favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<h1>おすすめの商品</h1>
+<h1>いいね！一覧</h1>
+
 <div class="product-grid">
-    <?php if (empty($products)): ?>
-        <p>現在出品されている商品はありません。</p>
+    <?php if (empty($favorites)): ?>
+        <p>いいねした商品はありません。</p>
     <?php else: ?>
-        <?php foreach ($products as $product): ?>
+        <?php foreach ($favorites as $product): ?>
             <div class="product-card">
-                <a href="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>detail.php?id=<?= htmlspecialchars($product['id'], ENT_QUOTES) ?>">
+                <a href="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>detail.php?id=<?= $product['id'] ?>">
                     <img src="<?= htmlspecialchars(PUBLIC_ROOT_PATH, ENT_QUOTES) ?>uploads/<?= htmlspecialchars($product['image_path'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($product['name'], ENT_QUOTES) ?>">
                     <div class="product-info">
                         <p class="product-name"><?= htmlspecialchars($product['name'], ENT_QUOTES) ?></p>
