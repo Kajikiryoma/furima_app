@@ -1,8 +1,13 @@
-<?php require '../includes/templates/header.php'; ?>
+<?php
+require_once __DIR__ . '/../includes/templates/header.php';
+
+// 修正点 今日の日付を取得
+$today = date('Y-m-d');
+?>
 
 <div class="form-wrapper">
     <h1>会員登録</h1>
-    <form action="../includes/logic/customer-output.php" method="post">
+    <form action="/includes/logic/customer-output.php" method="post">
         <p>
             <label for="name">お名前:</label>
             <input type="text" id="name" name="name" required>
@@ -13,7 +18,7 @@
         </p>
         <p>
             <label for="birthdate">生年月日:</label>
-            <input type="date" id="birthdate" name="birthdate" required>
+            <input type="date" id="birthdate" name="birthdate" required min="1900-01-01" max="<?= $today ?>">
         </p>
         <p>
             <label for="password">パスワード:</label>
@@ -23,4 +28,4 @@
     </form>
 </div>
 
-<?php require '../includes/templates/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/templates/footer.php'; ?>
